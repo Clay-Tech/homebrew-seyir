@@ -1,0 +1,41 @@
+# Seyir'in yeni sürümü çıkınca cask'ı günceller: sürüm ve DMG'nin sha256'sı.
+# Sürüm iş akışı bunu tetikleyebilir (repository_dispatch); ayrıca 3 saatte bir kendisi bakar.
+name: Cask'ı güncelle
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  repository_dispatch:
+    types: [seyir-surum]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cask
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Son sürümü bul ve cask'ı güncelle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=$(gh release view -R Clay-Tech/seyir --json tagName --jq .tagName)
+          YENI=${TAG#v}
+          ESKI=$(sed -n 's/^  version "\(.*\)"/\1/p' Casks/seyir.rb)
+          echo "eski=$ESKI yeni=$YENI"
+          [ "$YENI" = "$ESKI" ] && { echo "Cask güncel"; exit 0; }
+          curl -fsSL -o Seyir.dmg "https://github.com/Clay-Tech/seyir/releases/download/${TAG}/Seyir.dmg"
+          SHA=$(sha256sum Seyir.dmg | cut -d' ' -f1)
+          rm Seyir.dmg
+          sed -i "s/^  version \".*\"/  version \"${YENI}\"/; s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" Casks/seyir.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "seyir ${YENI}"
+          git push
