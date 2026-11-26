@@ -1,6 +1,6 @@
 cask "seyir" do
-  version "0.11.0"
-  sha256 "310129675b1bbf7a892c12883b510b92c88604dd4f09a3d55e00468ccdf184ae"
+  version "0.13.0"
+  sha256 "4ac87c7ad49ec870aa94e17116f8c8356a1b75fe2cea0fea343ee379f04e1805"
 
   url "https://github.com/Clay-Tech/seyir/releases/download/v#{version}/Seyir.dmg"
   name "Seyir"
